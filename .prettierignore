@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.expo/
+coverage/
+apps/mobile/expo-env.d.ts

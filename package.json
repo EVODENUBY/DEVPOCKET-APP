@@ -1,0 +1,30 @@
+{
+  "name": "devpocket",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:mobile": "npm run start --workspace @devpocket/mobile",
+    "dev:api": "npm run start:dev --workspace @devpocket/api",
+    "build:mobile": "npm run export:android --workspace @devpocket/mobile",
+    "build": "npm run build --workspace @devpocket/api",
+    "db:generate": "npm run db:generate --workspace @devpocket/api",
+    "db:push": "npm run db:push --workspace @devpocket/api",
+    "lint": "eslint . --ext .js,.mjs,.cjs,.ts,.tsx --max-warnings=0",
+    "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml}\"",
+    "typecheck": "npm run typecheck --workspace @devpocket/api && npm run typecheck --workspace @devpocket/mobile",
+    "test": "npm test --workspace @devpocket/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.44.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

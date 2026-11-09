@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "DevPocket",
+    "slug": "devpocket",
+    "scheme": "devpocket",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.devpocket.app"
+    },
+    "android": {
+      "package": "com.devpocket.app"
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-web-browser"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
