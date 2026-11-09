@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useSessionStore } from '../../src/auth/sessionStore';
-import { ApiHealthCard } from '../../src/components/ApiHealthCard';
+import { ProviderIcon } from '../../src/components/ProviderIcon';
 import { Card } from '../../src/components/ui/Card';
 import { PrimaryButton } from '../../src/components/ui/PrimaryButton';
 import { Screen } from '../../src/components/ui/Screen';
+import { appInfo } from '../../src/config/appInfo';
+import { useProviderConnections } from '../../src/providers/useProviders';
 import { useAppTheme } from '../../src/theme/useAppTheme';
 import {
   useSettingsStore,
@@ -15,10 +18,29 @@ const themeModes: ThemeMode[] = ['system', 'light', 'dark'];
 
 export default function SettingsScreen() {
   const { colors } = useAppTheme();
-  const { logout } = useAuth();
+  const { logout, loginWithProvider } = useAuth();
   const user = useSessionStore((state) => state.user);
   const themeMode = useSettingsStore((state) => state.themeMode);
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
+  const connectionsQuery = useProviderConnections();
+  const [connectingGithub, setConnectingGithub] = useState(false);
+
+  const handleConnectGithub = async () => {
+    setConnectingGithub(true);
+    try {
+      const session = await loginWithProvider('github');
+      if (session) {
+        await connectionsQuery.refetch();
+      }
+    } catch (error) {
+      Alert.alert(
+        'GitHub connection failed',
+        error instanceof Error ? error.message : 'Could not connect GitHub.',
+      );
+    } finally {
+      setConnectingGithub(false);
+    }
+  };
 
   return (
     <Screen title="Settings" subtitle="App preferences and connection status.">
@@ -92,49 +114,109 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Backend</Text>
-      <ApiHealthCard />
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
       <Card>
         <Text style={[styles.cardTitle, { color: colors.text }]}>
-          API address
-        </Text>
-        <Text
-          selectable
-          style={[styles.apiUrl, { color: colors.secondaryText }]}
-        >
-          {process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1'}
+          DevPocket
         </Text>
         <Text style={[styles.note, { color: colors.secondaryText }]}>
-          Set EXPO_PUBLIC_API_URL in your local .env file. For a physical
-          Android phone, use your development computer&apos;s LAN IP instead of
-          localhost.
+          Version {appInfo.version}
         </Text>
       </Card>
 
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
         Integrations
       </Text>
-      {['GitHub', 'GitLab', 'Vercel', 'Render'].map((provider) => (
-        <Card key={provider} style={styles.providerCard}>
-          <View style={styles.providerRow}>
-            <Text
-              style={[
-                styles.cardTitle,
-                styles.providerName,
-                { color: colors.text },
-              ]}
-            >
-              {provider}
-            </Text>
-            <Text style={[styles.connectionStatus, { color: colors.warning }]}>
-              Not connected
-            </Text>
-          </View>
+      {connectionsQuery.isPending ? (
+        <Card>
           <Text style={[styles.note, { color: colors.secondaryText }]}>
-            Secure connection flow is not implemented yet.
+            Checking provider connections…
           </Text>
         </Card>
-      ))}
+      ) : connectionsQuery.isError ? (
+        <Card>
+          <Text style={[styles.note, { color: colors.error }]}>
+            {connectionsQuery.error.message}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void connectionsQuery.refetch()}
+            style={[styles.retryButton, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.retryLabel, { color: colors.text }]}>
+              Try again
+            </Text>
+          </Pressable>
+        </Card>
+      ) : (
+        connectionsQuery.data.map((connection) => {
+          const statusColor = connection.connected
+            ? connection.tokenStored
+              ? colors.success
+              : colors.warning
+            : colors.mutedText;
+          return (
+            <Card key={connection.key} style={styles.providerCard}>
+              <View style={styles.providerRow}>
+                <View style={styles.providerIdentity}>
+                  <ProviderIcon provider={connection.key} size={26} />
+                  <Text
+                    style={[
+                      styles.cardTitle,
+                      styles.providerName,
+                      { color: colors.text },
+                    ]}
+                  >
+                    {connection.label}
+                  </Text>
+                </View>
+                <Text style={[styles.connectionStatus, { color: statusColor }]}>
+                  {connection.connected
+                    ? connection.tokenStored
+                      ? 'Connected'
+                      : 'Reconnect'
+                    : 'Not connected'}
+                </Text>
+              </View>
+              <Text style={[styles.note, { color: colors.secondaryText }]}>
+                {connection.connected
+                  ? connection.repositoryAccess
+                    ? 'Repository access is active and stored securely on the server.'
+                    : connection.tokenStorageEnabled
+                      ? 'Reconnect to renew repository access.'
+                      : 'Repository access is not available yet. Please try again later.'
+                  : connection.key === 'github'
+                    ? 'Connect GitHub to load repositories on your dashboard.'
+                    : 'This provider is not available yet.'}
+              </Text>
+              {connection.key === 'github' && !connection.repositoryAccess ? (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={connectingGithub}
+                  onPress={() => void handleConnectGithub()}
+                  style={[
+                    styles.connectButton,
+                    {
+                      backgroundColor: colors.primary,
+                      opacity: connectingGithub ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.connectLabel, { color: colors.onPrimary }]}
+                  >
+                    {connectingGithub
+                      ? 'Opening GitHub…'
+                      : connection.connected
+                        ? 'Reconnect GitHub'
+                        : 'Connect GitHub'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </Card>
+          );
+        })
+      )}
     </Screen>
   );
 }
@@ -157,7 +239,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   themeLabel: { fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
-  apiUrl: { fontSize: 13, fontFamily: 'monospace' },
   note: { fontSize: 13, lineHeight: 19, marginTop: 8 },
   providerCard: { marginBottom: 8 },
   providerRow: {
@@ -165,7 +246,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  providerIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
   providerName: { marginBottom: 0 },
   connectionStatus: { fontSize: 12, fontWeight: '600' },
+  retryButton: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginTop: 10,
+  },
+  retryLabel: { fontSize: 12, fontWeight: '600' },
+  connectButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    marginTop: 12,
+  },
+  connectLabel: { fontSize: 12, fontWeight: '700' },
   signOut: { marginTop: 16 },
 });

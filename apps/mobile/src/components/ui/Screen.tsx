@@ -1,4 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { ReactNode } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../../theme/useAppTheme';
@@ -9,9 +15,18 @@ type ScreenProps = {
   title?: string;
   subtitle?: string;
   eyebrow?: string;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
-export function Screen({ children, title, subtitle, eyebrow }: ScreenProps) {
+export function Screen({
+  children,
+  title,
+  subtitle,
+  eyebrow,
+  refreshing = false,
+  onRefresh,
+}: ScreenProps) {
   const { colors } = useAppTheme();
 
   return (
@@ -22,6 +37,16 @@ export function Screen({ children, title, subtitle, eyebrow }: ScreenProps) {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            ) : undefined
+          }
         >
           {title ? (
             <View style={styles.header}>
