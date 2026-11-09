@@ -15,7 +15,7 @@ export const oauthProviders: Record<OAuthProviderKey, OAuthProviderConfig> = {
     label: 'GitHub',
     authorizeUrl: 'https://github.com/login/oauth/authorize',
     tokenUrl: 'https://github.com/login/oauth/access_token',
-    scopes: ['read:user', 'user:email'],
+    scopes: ['read:user', 'user:email', 'repo'],
   },
   google: {
     key: 'google',
