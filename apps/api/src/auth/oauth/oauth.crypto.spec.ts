@@ -27,9 +27,11 @@ describe('oauth crypto helpers', () => {
   it('rejects tampered or malformed payloads', () => {
     const secret = 'x'.repeat(32);
     const [iv, tag, data] = encryptSecret('token', secret).split('.');
+    const tampered = Buffer.from(data, 'base64url');
+    tampered[0] ^= 0x01;
 
     expect(() =>
-      decryptSecret(`${iv}.${tag}.${data.slice(0, -1)}A`, secret),
+      decryptSecret(`${iv}.${tag}.${tampered.toString('base64url')}`, secret),
     ).toThrow();
     expect(() => decryptSecret('not-encrypted', secret)).toThrow(
       'Malformed encrypted secret.',
