@@ -19,7 +19,16 @@ const environmentSchema = z.object({
 });
 
 export function getEnvironment(environment: NodeJS.ProcessEnv = process.env) {
-  return environmentSchema.parse(environment);
+  const parsed = environmentSchema.safeParse(environment);
+  if (!parsed.success) {
+    const details = parsed.error.issues
+      .map(
+        (issue) => `${issue.path.join('.') || 'environment'}: ${issue.message}`,
+      )
+      .join('; ');
+    throw new Error(`Invalid environment configuration - ${details}`);
+  }
+  return parsed.data;
 }
 
 export type Environment = z.infer<typeof environmentSchema>;

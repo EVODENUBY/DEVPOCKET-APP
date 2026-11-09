@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: devpocket-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start --workspace @devpocket/api
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.23.1
+      - key: OAUTH_MOBILE_REDIRECT_PREFIXES
+        value: devpocket://
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: OAUTH_TOKEN_KEY
+        sync: false
+      - key: OAUTH_CALLBACK_BASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
